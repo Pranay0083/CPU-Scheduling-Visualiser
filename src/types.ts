@@ -357,3 +357,35 @@ export function formatBurstPattern(bursts: Burst[]): string {
         .map(b => `${b.type}(${b.duration})`)
         .join(' -> ');
 }
+
+// ============================================================
+// Learning Page Types
+// ============================================================
+
+// App navigation pages
+export type AppPage = 'SIMULATOR' | 'LEARN';
+
+// Learning module IDs
+export type LearningModuleId =
+    | 'basics'
+    | 'scheduling-criteria'
+    | 'preemption'
+    | 'advanced'
+    | 'formulas';
+
+// Glossary term definition
+export interface GlossaryTerm {
+    term: string;
+    definition: string;
+    example?: string;
+}
+
+// Interactive example scenario
+export interface InteractiveExample {
+    id: string;
+    title: string;
+    description: string;
+    algorithms: Algorithm[];
+    processes: ProcessFormData[];
+    explanation: string;
+}
