@@ -7,6 +7,9 @@ import {
   MetricsDashboard,
   ProcessQueue,
   ProcessTable,
+  PredictionTable,
+  Scorecard,
+  QuizPopup,
 } from './components';
 
 function App() {
@@ -39,6 +42,7 @@ function App() {
             <section className="top-section">
               <div className="top-left">
                 <ProcessForm />
+                <PredictionTable />
                 <ProcessTable />
               </div>
               <div className="top-right">
@@ -70,6 +74,10 @@ function App() {
             Multi-Core Support • I/O Bursts • Priority Aging
           </p>
         </footer>
+
+        {/* Overlays for Test Mode */}
+        <Scorecard />
+        <QuizPopup />
       </div>
     </SchedulerProvider>
   );

@@ -11,6 +11,10 @@ import type {
     Metrics,
     SchedulerEvent,
     MLFQQueue,
+    InteractionMode,
+    PredictionState,
+    QuizState,
+    QuizQuestion,
 } from '../types';
 import { PROCESS_COLORS } from '../types';
 import { getNextProcess, assignProcessToCore, applyPriorityAging } from '../engine/algorithms';
@@ -53,6 +57,23 @@ function createMLFQQueues(numQueues: number = 3, baseQuantum: number = 2): MLFQQ
     }));
 }
 
+const initialPredictionState: PredictionState = {
+    predictions: [],
+    predictedAWT: null,
+    submitted: false,
+    showResults: false,
+};
+
+const initialQuizState: QuizState = {
+    active: false,
+    currentQuestion: null,
+    questionsAnswered: 0,
+    correctAnswers: 0,
+    totalPoints: 0,
+    history: [],
+    showFinalResults: false,
+};
+
 const initialState: SchedulerState = {
     algorithm: 'FCFS',
     coreCount: 1,
@@ -69,6 +90,10 @@ const initialState: SchedulerState = {
     kernelLog: [],
     metrics: initialMetrics,
     clockHistory: [],
+    // Test/Prediction Mode
+    interactionMode: 'NORMAL',
+    predictionState: initialPredictionState,
+    quizState: initialQuizState,
 };
 
 // ============================================================
@@ -662,6 +687,133 @@ function schedulerReducer(state: SchedulerState, action: SchedulerAction): Sched
                 clock: 0,
                 clockHistory: [],
                 simulationState: 'STOPPED',
+                predictionState: initialPredictionState,
+                quizState: initialQuizState,
+            };
+
+        // ============================================================
+        // Test/Prediction Mode Actions
+        // ============================================================
+        case 'SET_INTERACTION_MODE':
+            return {
+                ...state,
+                interactionMode: action.payload,
+                predictionState: initialPredictionState,
+                quizState: initialQuizState,
+            };
+
+        case 'INIT_PREDICTIONS':
+            // Initialize predictions for all current processes
+            return {
+                ...state,
+                predictionState: {
+                    ...state.predictionState,
+                    predictions: state.processes.map(p => ({
+                        processId: p.id,
+                        processName: p.name,
+                        predictedCT: null,
+                    })),
+                    submitted: false,
+                    showResults: false,
+                },
+            };
+
+        case 'SET_PREDICTION':
+            return {
+                ...state,
+                predictionState: {
+                    ...state.predictionState,
+                    predictions: state.predictionState.predictions.map(p =>
+                        p.processId === action.payload.processId
+                            ? { ...p, predictedCT: action.payload.predictedCT }
+                            : p
+                    ),
+                },
+            };
+
+        case 'SET_AWT_PREDICTION':
+            return {
+                ...state,
+                predictionState: {
+                    ...state.predictionState,
+                    predictedAWT: action.payload,
+                },
+            };
+
+        case 'SUBMIT_PREDICTIONS':
+            return {
+                ...state,
+                predictionState: {
+                    ...state.predictionState,
+                    submitted: true,
+                },
+            };
+
+        case 'SHOW_PREDICTION_RESULTS':
+            return {
+                ...state,
+                predictionState: {
+                    ...state.predictionState,
+                    showResults: true,
+                },
+            };
+
+        case 'TRIGGER_QUIZ':
+            return {
+                ...state,
+                simulationState: 'PAUSED',
+                quizState: {
+                    ...state.quizState,
+                    active: true,
+                    currentQuestion: action.payload,
+                },
+            };
+
+        case 'ANSWER_QUIZ': {
+            const currentQuestion = state.quizState.currentQuestion;
+            if (!currentQuestion) return state;
+
+            const isCorrect = action.payload.answer === currentQuestion.correctAnswer;
+            const points = isCorrect ? 10 : 0;
+
+            return {
+                ...state,
+                quizState: {
+                    ...state.quizState,
+                    questionsAnswered: state.quizState.questionsAnswered + 1,
+                    correctAnswers: state.quizState.correctAnswers + (isCorrect ? 1 : 0),
+                    totalPoints: state.quizState.totalPoints + points,
+                    history: [
+                        ...state.quizState.history,
+                        {
+                            question: currentQuestion,
+                            userAnswer: action.payload.answer,
+                            correct: isCorrect,
+                            timeTaken: action.payload.timeTaken,
+                        },
+                    ],
+                },
+            };
+        }
+
+        case 'DISMISS_QUIZ':
+            return {
+                ...state,
+                simulationState: 'RUNNING',
+                quizState: {
+                    ...state.quizState,
+                    active: false,
+                    currentQuestion: null,
+                },
+            };
+
+        case 'SHOW_QUIZ_RESULTS':
+            return {
+                ...state,
+                quizState: {
+                    ...state.quizState,
+                    showFinalResults: true,
+                },
             };
 
         default:
@@ -688,6 +840,17 @@ interface SchedulerContextType {
     stop: () => void;
     step: () => void;
     reset: () => void;
+    // Test/Prediction Mode
+    setInteractionMode: (mode: InteractionMode) => void;
+    initPredictions: () => void;
+    setPrediction: (processId: string, predictedCT: number | null) => void;
+    setAWTPrediction: (awt: number | null) => void;
+    submitPredictions: () => void;
+    showPredictionResults: () => void;
+    triggerQuiz: (question: QuizQuestion) => void;
+    answerQuiz: (answer: string, timeTaken: number) => void;
+    dismissQuiz: () => void;
+    showQuizResults: () => void;
 }
 
 const SchedulerContext = createContext<SchedulerContextType | null>(null);
@@ -769,6 +932,47 @@ export function SchedulerProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'RESET' });
     }, []);
 
+    // Test/Prediction Mode actions
+    const setInteractionMode = useCallback((mode: InteractionMode) => {
+        dispatch({ type: 'SET_INTERACTION_MODE', payload: mode });
+    }, []);
+
+    const initPredictions = useCallback(() => {
+        dispatch({ type: 'INIT_PREDICTIONS' });
+    }, []);
+
+    const setPrediction = useCallback((processId: string, predictedCT: number | null) => {
+        dispatch({ type: 'SET_PREDICTION', payload: { processId, predictedCT } });
+    }, []);
+
+    const setAWTPrediction = useCallback((awt: number | null) => {
+        dispatch({ type: 'SET_AWT_PREDICTION', payload: awt });
+    }, []);
+
+    const submitPredictions = useCallback(() => {
+        dispatch({ type: 'SUBMIT_PREDICTIONS' });
+    }, []);
+
+    const showPredictionResults = useCallback(() => {
+        dispatch({ type: 'SHOW_PREDICTION_RESULTS' });
+    }, []);
+
+    const triggerQuiz = useCallback((question: QuizQuestion) => {
+        dispatch({ type: 'TRIGGER_QUIZ', payload: question });
+    }, []);
+
+    const answerQuiz = useCallback((answer: string, timeTaken: number) => {
+        dispatch({ type: 'ANSWER_QUIZ', payload: { answer, timeTaken } });
+    }, []);
+
+    const dismissQuiz = useCallback(() => {
+        dispatch({ type: 'DISMISS_QUIZ' });
+    }, []);
+
+    const showQuizResults = useCallback(() => {
+        dispatch({ type: 'SHOW_QUIZ_RESULTS' });
+    }, []);
+
     const value = {
         state,
         dispatch,
@@ -785,6 +989,17 @@ export function SchedulerProvider({ children }: { children: React.ReactNode }) {
         stop,
         step,
         reset,
+        // Test/Prediction Mode
+        setInteractionMode,
+        initPredictions,
+        setPrediction,
+        setAWTPrediction,
+        submitPredictions,
+        showPredictionResults,
+        triggerQuiz,
+        answerQuiz,
+        dismissQuiz,
+        showQuizResults,
     };
 
     return (

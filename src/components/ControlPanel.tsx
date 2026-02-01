@@ -1,6 +1,12 @@
 import { useScheduler } from '../context/SchedulerContext';
 import { parseBurstPattern } from '../types';
-import type { Algorithm, CoreCount, SimulationSpeed } from '../types';
+import type { Algorithm, CoreCount, SimulationSpeed, InteractionMode } from '../types';
+
+const INTERACTION_MODES: { value: InteractionMode; label: string; icon: string }[] = [
+    { value: 'NORMAL', label: 'Normal', icon: '▶️' },
+    { value: 'PREDICT_VERIFY', label: 'Predict & Verify', icon: '📝' },
+    { value: 'QUIZ', label: 'Quiz Mode', icon: '❓' },
+];
 
 const ALGORITHMS: { value: Algorithm; label: string }[] = [
     { value: 'FCFS', label: 'First Come First Serve' },
@@ -62,6 +68,7 @@ export function ControlPanel() {
         reset,
         clearProcesses,
         addProcess,
+        setInteractionMode,
     } = useScheduler();
 
     const isRunning = state.simulationState === 'RUNNING';
@@ -83,6 +90,30 @@ export function ControlPanel() {
 
     return (
         <div className="control-panel">
+            {/* Simulation Mode Selector */}
+            <div className="control-section mode-section">
+                <h3 className="control-title">Mode</h3>
+                <div className="mode-buttons">
+                    {INTERACTION_MODES.map(mode => (
+                        <button
+                            key={mode.value}
+                            onClick={() => setInteractionMode(mode.value)}
+                            disabled={isRunning}
+                            className={`mode-button ${state.interactionMode === mode.value ? 'active' : ''}`}
+                            title={mode.label}
+                        >
+                            <span className="mode-icon">{mode.icon}</span>
+                            <span className="mode-label">{mode.label}</span>
+                        </button>
+                    ))}
+                </div>
+                {state.interactionMode === 'QUIZ' && (
+                    <div className="mode-score">
+                        Score: <strong>{state.quizState.totalPoints}</strong> pts
+                    </div>
+                )}
+            </div>
+
             <div className="control-section">
                 <h3 className="control-title">Algorithm</h3>
                 <select

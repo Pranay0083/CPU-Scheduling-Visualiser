@@ -5,3 +5,6 @@ export { KernelLog } from './KernelLog';
 export { MetricsDashboard } from './MetricsDashboard';
 export { ProcessQueue } from './ProcessQueue';
 export { ProcessTable } from './ProcessTable';
+export { PredictionTable } from './PredictionTable';
+export { Scorecard } from './Scorecard';
+export { QuizPopup } from './QuizPopup';
