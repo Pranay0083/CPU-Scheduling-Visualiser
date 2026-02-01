@@ -203,14 +203,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-## 👨‍💻 Author
-
-**Pranay Vishwakarma**
-
-- GitHub: [@Pranay0083](https://github.com/Pranay0083)
-
----
-
 <p align="center">
   <strong>Currently simulating 6 algorithms, 4 cores, and ∞ possibilities</strong> 💜
 </p>
