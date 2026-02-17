@@ -1,18 +1,11 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { SchedulerProvider, useScheduler } from './context/SchedulerContext';
-import type { AppPage, Algorithm } from './types';
+import type { Algorithm } from './types';
 import {
-  ControlPanel,
-  ProcessForm,
-  GanttChart,
-  KernelLog,
-  MetricsDashboard,
-  ProcessQueue,
-  ProcessTable,
-  PredictionTable,
-  Scorecard,
-  LearnPage,
   LandingPage,
+  SimulatorPage,
+  LearnPage,
 } from './components';
 
 // Preset configurations for quick-start demos
@@ -45,8 +38,9 @@ const DEMO_PRESETS = {
   },
 };
 
-function AppContent() {
-  const [currentPage, setCurrentPage] = useState<AppPage>('HOME');
+function AppLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('cpu-scheduler-dark-mode');
     if (saved !== null) return saved === 'true';
@@ -60,7 +54,8 @@ function AppContent() {
   }, [darkMode]);
 
   const handleNavigate = (page: 'SIMULATOR' | 'LEARN') => {
-    setCurrentPage(page);
+    if (page === 'SIMULATOR') navigate('/simulator');
+    if (page === 'LEARN') navigate('/learn');
   };
 
   const handleLoadPreset = (presetName: string) => {
@@ -81,27 +76,30 @@ function AppContent() {
           },
         });
       });
+      navigate('/simulator');
     }
   };
 
   const handleNavigateToSimulator = (algorithm?: string, _preset?: string) => {
-    setCurrentPage('SIMULATOR');
     if (algorithm) {
       dispatch({ type: 'SET_ALGORITHM', payload: algorithm as Algorithm });
     }
+    navigate('/simulator');
   };
 
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
+  const isHome = location.pathname === '/';
+
   return (
     <div className={`min-h-screen flex flex-col bg-bg-primary text-text-primary transition-colors duration-200 ${darkMode ? 'dark' : 'light'}`}>
       {/* Header - Only show on SIMULATOR and LEARN pages */}
-      {currentPage !== 'HOME' && (
+      {!isHome && (
         <header className="glass-header justify-between">
           <div className="flex flex-col gap-1">
             <h1 
               className="text-2xl font-bold bg-gradient-to-br from-accent-primary to-accent-secondary bg-clip-text text-transparent flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity" 
-              onClick={() => setCurrentPage('HOME')}
+              onClick={() => navigate('/')}
             >
               <span className="text-2xl">⚡</span>
               CPU Scheduler Visualizer
@@ -113,15 +111,15 @@ function AppContent() {
 
           <nav className="flex gap-2">
             <button
-              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 font-medium border ${currentPage === 'SIMULATOR' ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30' : 'bg-white/5 border-transparent text-text-secondary hover:bg-white/10'}`}
-              onClick={() => setCurrentPage('SIMULATOR')}
+              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 font-medium border ${location.pathname === '/simulator' ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30' : 'bg-white/5 border-transparent text-text-secondary hover:bg-white/10'}`}
+              onClick={() => navigate('/simulator')}
             >
               <span className="text-lg">⚡</span>
               Simulator
             </button>
             <button
-              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 font-medium border ${currentPage === 'LEARN' ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30' : 'bg-white/5 border-transparent text-text-secondary hover:bg-white/10'}`}
-              onClick={() => setCurrentPage('LEARN')}
+              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 font-medium border ${location.pathname === '/learn' ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30' : 'bg-white/5 border-transparent text-text-secondary hover:bg-white/10'}`}
+              onClick={() => navigate('/learn')}
             >
               <span className="text-lg">📚</span>
               Learn
@@ -130,72 +128,45 @@ function AppContent() {
         </header>
       )}
 
-      {/* Page Rendering */}
-      {currentPage === 'HOME' ? (
-        <LandingPage
-          onNavigate={handleNavigate}
-          onLoadPreset={handleLoadPreset}
-          darkMode={darkMode}
-          onToggleDarkMode={toggleDarkMode}
+      {/* Page Routing */}
+      <Routes>
+        <Route 
+          path="/" 
+          element={
+            <LandingPage
+              onNavigate={handleNavigate}
+              onLoadPreset={handleLoadPreset}
+              darkMode={darkMode}
+              onToggleDarkMode={toggleDarkMode}
+            />
+          } 
         />
-      ) : currentPage === 'SIMULATOR' ? (
-        <>
-          <main className="grid grid-cols-[300px_1fr_300px] gap-6 p-6 h-[calc(100vh-120px)] overflow-hidden">
-            <aside className="flex flex-col gap-4 h-full overflow-y-auto scrollbar-thin pr-2">
-              <ControlPanel />
-            </aside>
-
-            <div className="flex flex-col gap-6 h-full overflow-y-auto scrollbar-thin pr-2">
-              <section className="grid grid-cols-[1.6fr_1fr] gap-6">
-                <div className="flex flex-col gap-4">
-                  <ProcessForm />
-                  <PredictionTable />
-                  <ProcessTable />
-                </div>
-                <div className="h-full">
-                  <MetricsDashboard />
-                </div>
-              </section>
-
-              <section className="min-h-[200px]">
-                <GanttChart />
-              </section>
-
-              <section className="min-h-[150px]">
-                <ProcessQueue />
-              </section>
-            </div>
-
-            <aside className="flex flex-col gap-4 h-full overflow-y-auto scrollbar-thin pr-2">
-              <KernelLog />
-            </aside>
-          </main>
-
-          <footer className="glass-footer text-text-secondary">
-            <p>
-              Algorithms: FCFS • SJF • SRTF • Round Robin • Priority • MLFQ |
-              Multi-Core Support • I/O Bursts • Priority Aging
-            </p>
-          </footer>
-
-          <Scorecard />
-        </>
-      ) : (
-        <LearnPage
-          onNavigateToSimulator={handleNavigateToSimulator}
-          darkMode={darkMode}
-          onToggleDarkMode={toggleDarkMode}
+        <Route 
+          path="/simulator" 
+          element={<SimulatorPage />} 
         />
-      )}
+        <Route 
+          path="/learn" 
+          element={
+            <LearnPage
+              onNavigateToSimulator={handleNavigateToSimulator}
+              darkMode={darkMode}
+              onToggleDarkMode={toggleDarkMode}
+            />
+          } 
+        />
+      </Routes>
     </div>
   );
 }
 
 function App() {
   return (
-    <SchedulerProvider>
-      <AppContent />
-    </SchedulerProvider>
+    <BrowserRouter>
+      <SchedulerProvider>
+        <AppLayout />
+      </SchedulerProvider>
+    </BrowserRouter>
   );
 }
 
