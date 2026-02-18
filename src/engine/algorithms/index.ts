@@ -102,67 +102,115 @@ export function roundRobinSchedule(
     timeQuantumRemaining: number,
     _currentTime: number
 ): { selected: Process | null; shouldPreempt: boolean; resetQuantum: boolean } {
-    // If no current process, pick from ready queue
+
+    // If no running process
     if (!currentProcess) {
         if (readyQueue.length === 0) {
             return { selected: null, shouldPreempt: false, resetQuantum: false };
         }
-        // Sort by arrival time for fairness
-        const sorted = [...readyQueue].sort((a, b) => {
-            if (a.arrivalTime !== b.arrivalTime) return a.arrivalTime - b.arrivalTime;
-            return a.id.localeCompare(b.id);
-        });
-        return { selected: sorted[0], shouldPreempt: false, resetQuantum: true };
+
+        // Pick first in queue
+        return {
+            selected: readyQueue[0],
+            shouldPreempt: false,
+            resetQuantum: true
+        };
     }
 
-    // Check if quantum expired
+    // If time slice over → preempt
     if (timeQuantumRemaining <= 0 && readyQueue.length > 0) {
-        // Time quantum expired, preempt current process
-        // Current process goes to end of ready queue
-        const sorted = [...readyQueue].sort((a, b) => {
-            if (a.arrivalTime !== b.arrivalTime) return a.arrivalTime - b.arrivalTime;
-            return a.id.localeCompare(b.id);
-        });
-        return { selected: sorted[0], shouldPreempt: true, resetQuantum: true };
+        return {
+            selected: readyQueue[0], // Next in line
+            shouldPreempt: true,
+            resetQuantum: true
+        };
     }
 
-    // Continue with current process
-    return { selected: currentProcess, shouldPreempt: false, resetQuantum: false };
+    // Otherwise continue
+    return {
+        selected: currentProcess,
+        shouldPreempt: false,
+        resetQuantum: false
+    };
 }
 
 // ============================================================
 // Priority Scheduling (Preemptive)
 // ============================================================
+
+
+
 export function priorityPreemptiveSchedule(
     readyQueue: Process[],
     currentProcess: Process | null,
     _currentTime: number
 ): { selected: Process | null; shouldPreempt: boolean } {
-    if (readyQueue.length === 0 && !currentProcess) {
+
+    // No process at all
+    if (!currentProcess && readyQueue.length === 0) {
         return { selected: null, shouldPreempt: false };
     }
 
-    const candidates = currentProcess
-        ? [...readyQueue, currentProcess]
-        : [...readyQueue];
+    // If CPU is idle → pick best from ready queue
+    if (!currentProcess) {
+        let best = readyQueue[0];
 
-    if (candidates.length === 0) {
-        return { selected: null, shouldPreempt: false };
+        for (const p of readyQueue) {
+            if (
+                p.priority < best.priority || // Higher priority
+                (p.priority === best.priority &&
+                 p.arrivalTime < best.arrivalTime)
+            ) {
+                best = p;
+            }
+        }
+
+        return {
+            selected: best,
+            shouldPreempt: false
+        };
     }
 
-    // Lower priority number = higher priority
-    const sorted = candidates.sort((a, b) => {
-        if (a.priority !== b.priority) return a.priority - b.priority;
-        if (a.arrivalTime !== b.arrivalTime) return a.arrivalTime - b.arrivalTime;
-        return a.id.localeCompare(b.id);
-    });
+    // Find best in ready queue
+    let best = null;
 
-    const selected = sorted[0];
-    const shouldPreempt = currentProcess !== null &&
-        selected.id !== currentProcess.id;
+    if (readyQueue.length > 0) {
+        best = readyQueue[0];
 
-    return { selected, shouldPreempt };
+        for (const p of readyQueue) {
+            if (
+                p.priority < best.priority ||
+                (p.priority === best.priority &&
+                 p.arrivalTime < best.arrivalTime)
+            ) {
+                best = p;
+            }
+        }
+    }
+
+    // Nothing better → continue
+    if (!best) {
+        return {
+            selected: currentProcess,
+            shouldPreempt: false
+        };
+    }
+
+    // Preempt ONLY if better priority
+    if (best.priority < currentProcess.priority) {
+        return {
+            selected: best,
+            shouldPreempt: true
+        };
+    }
+
+    // Otherwise keep running
+    return {
+        selected: currentProcess,
+        shouldPreempt: false
+    };
 }
+
 
 // ============================================================
 // Priority Scheduling (Non-preemptive)
@@ -172,20 +220,27 @@ export function priorityNonPreemptiveSchedule(
     currentProcess: Process | null,
     _currentTime: number
 ): Process | null {
-    // If there's a current process, don't preempt
+
+    // Don't preempt
     if (currentProcess) return currentProcess;
 
     if (readyQueue.length === 0) return null;
 
-    // Lower priority number = higher priority
-    const sorted = [...readyQueue].sort((a, b) => {
-        if (a.priority !== b.priority) return a.priority - b.priority;
-        if (a.arrivalTime !== b.arrivalTime) return a.arrivalTime - b.arrivalTime;
-        return a.id.localeCompare(b.id);
-    });
+    let best = readyQueue[0];
 
-    return sorted[0];
+    for (const p of readyQueue) {
+        if (
+            p.priority < best.priority ||
+            (p.priority === best.priority &&
+             p.arrivalTime < best.arrivalTime)
+        ) {
+            best = p;
+        }
+    }
+
+    return best;
 }
+
 
 // ============================================================
 // MLFQ - Multi-Level Feedback Queue

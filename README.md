@@ -4,7 +4,7 @@
 
 A comprehensive, high-performance CPU scheduling algorithms visualizer and simulator built with **React 19**, **TypeScript**, and **Vite 7**.
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://cpu-scheduling-visualiser.vercel.app)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://cpu-sechudling-visualiser.vercel.app/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF)](https://vite.dev/)
