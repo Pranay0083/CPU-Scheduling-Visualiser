@@ -220,20 +220,27 @@ export function priorityNonPreemptiveSchedule(
     currentProcess: Process | null,
     _currentTime: number
 ): Process | null {
-    // If there's a current process, don't preempt
+
+    // Don't preempt
     if (currentProcess) return currentProcess;
 
     if (readyQueue.length === 0) return null;
 
-    // Lower priority number = higher priority
-    const sorted = [...readyQueue].sort((a, b) => {
-        if (a.priority !== b.priority) return a.priority - b.priority;
-        if (a.arrivalTime !== b.arrivalTime) return a.arrivalTime - b.arrivalTime;
-        return a.id.localeCompare(b.id);
-    });
+    let best = readyQueue[0];
 
-    return sorted[0];
+    for (const p of readyQueue) {
+        if (
+            p.priority < best.priority ||
+            (p.priority === best.priority &&
+             p.arrivalTime < best.arrivalTime)
+        ) {
+            best = p;
+        }
+    }
+
+    return best;
 }
+
 
 // ============================================================
 // MLFQ - Multi-Level Feedback Queue
