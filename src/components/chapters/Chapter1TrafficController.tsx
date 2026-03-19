@@ -10,7 +10,7 @@ export function Chapter1TrafficController() {
             headline="Chapter 1: The Traffic Controller"
             subHeadline="Your CPU is a genius, but it can only do one thing at a time. The OS is the choreographer deciding who gets the 'brain'."
         >
-            <div className="relative w-full max-w-4xl flex items-center justify-center gap-16 py-12">
+            <div className="relative w-full max-w-4xl flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 py-12 px-4 md:px-0">
                 {/* The Ready Queue Mob */}
                 <div className="relative w-48 h-64 border-2 border-dashed hand-drawn-border p-4 flex flex-col justify-center items-center" style={{ borderColor: 'var(--grid-color)' }}>
                     <span className="absolute -top-10 font-architect text-xl opacity-70">The Mob</span>
@@ -45,7 +45,7 @@ export function Chapter1TrafficController() {
 
                 {/* The bottleneck arrow */}
                 <motion.svg
-                    className="w-24 h-12 text-[var(--cpu-stroke)] opacity-50"
+                    className="w-24 h-12 text-[var(--cpu-stroke)] opacity-50 rotate-90 md:rotate-0 transition-transform duration-500"
                     fill="none"
                     viewBox="0 0 100 50"
                     animate={{ x: [0, 10, 0] }}

@@ -55,13 +55,34 @@ export function Sandbox() {
     } = sandboxState;
 
     return (
-        <div className="h-screen w-full bg-[var(--bg-color)] text-[var(--cpu-stroke)] overflow-hidden relative font-sans flex flex-col">
-
-            {/* Unified Top Navigation Bar */}
-            <div className="w-full flex items-center justify-between px-6 pt-2 pb-2 z-50 relative pointer-events-none">
-
-                {/* Left: Exit Lab */}
+        <>
+            {/* Mobile Block Notice */}
+            <div className="md:hidden h-screen w-full bg-[var(--bg-color)] text-[var(--cpu-stroke)] flex flex-col items-center justify-center p-8 text-center font-sans">
+                <div className="w-24 h-24 border-2 border-dashed hand-drawn-border border-[var(--cpu-stroke)] flex items-center justify-center mb-6">
+                    <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h2 className="font-architect text-3xl mb-4">Sandbox Requires a Desktop</h2>
+                <p className="opacity-80 text-lg mb-8 max-w-sm">
+                    The complexity of the OS scheduler cannot be contained on a phone screen. Please switch to a desktop to enter the lab.
+                </p>
                 <button
+                    onClick={() => navigate('/')}
+                    className="flex items-center gap-2 font-architect border-b border-[var(--cpu-stroke)] hover:text-blue-500 hover:border-blue-500 transition-colors text-xl"
+                >
+                    <ArrowLeft className="w-5 h-5" /> Return Home
+                </button>
+            </div>
+
+            {/* Main Sandbox Interface (Hidden on mobile) */}
+            <div className="hidden md:flex h-screen w-full bg-[var(--bg-color)] text-[var(--cpu-stroke)] overflow-hidden relative font-sans flex-col">
+
+                {/* Unified Top Navigation Bar */}
+                <div className="w-full flex items-center justify-between px-6 pt-2 pb-2 z-50 relative pointer-events-none">
+
+                    {/* Left: Exit Lab */}
+                    <button
                     onClick={() => {
                         reset();
                         navigate('/');
@@ -173,6 +194,7 @@ export function Sandbox() {
             <div className="absolute inset-0 pointer-events-none z-0"
                 style={{ backgroundImage: 'radial-gradient(var(--grid-color) 1px, transparent 1px)', backgroundSize: '30px 30px', opacity: 0.3 }}
             />
-        </div>
+            </div>
+        </>
     );
 }
